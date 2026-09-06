@@ -39,6 +39,7 @@ import { createClient } from '@/utils/supabase/client';
 import { useHerSync } from '@/context/HerSyncContext';
 import { WeatherWidget } from '@/components/weather/WeatherWidget';
 import { isNonSkinImageAlert } from '@/lib/utils/skin-helpers';
+import { useTranslation } from '@/i18n/useTranslation';
 
 type SkinEntry = {
   id: string;
@@ -107,6 +108,7 @@ const compressImageToBase64 = (file: File): Promise<string> => {
 };
 
 export default function SkinTrackerPage() {
+  const { t } = useTranslation();
   const { skinLogs, refreshSkinLogs, wellnessMode } = useHerSync();
   const [userId, setUserId] = useState<string | null>(null);
   
@@ -534,13 +536,13 @@ export default function SkinTrackerPage() {
       <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-3">
         <div>
           <div className="flex items-center gap-2">
-            <h1 className="text-2xl font-bold tracking-tight">Clinical Skin Care & Glow</h1>
+            <h1 className="text-2xl font-bold tracking-tight">{t('skin.title')}</h1>
             <span className="text-[10px] px-2 py-0.5 rounded-full bg-violet-600/20 text-violet-300 font-semibold border border-violet-500/30">
               AI Vision 2.5
             </span>
           </div>
           <p className="text-xs text-muted-foreground mt-0.5">
-            Dermatological AI diagnostics, active ingredient protocols & hormonal nutrition calibrated to your cycle.
+            {t('skin.subtitle')}
           </p>
         </div>
         <Button 

@@ -9,8 +9,10 @@ import { createClient } from '@/utils/supabase/client';
 import { useRouter } from 'next/navigation';
 import { useHerSync } from '@/context/HerSyncContext';
 import { DoctorReportModal } from '@/components/reports/DoctorReportModal';
+import { useTranslation } from '@/i18n/useTranslation';
 
 export default function ReportsPage() {
+  const { t } = useTranslation();
   const [loading, setLoading] = useState(true);
   const [dailyLogs, setDailyLogs] = useState<any[]>([]);
   const [cycleLogs, setCycleLogs] = useState<any[]>([]);
@@ -140,8 +142,8 @@ export default function ReportsPage() {
     <div className="max-w-6xl mx-auto w-full space-y-6 pb-24 animate-in fade-in duration-500 md:py-8">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight mb-1">Health Reports & Clinical Records</h1>
-          <p className="text-xs text-muted-foreground">Comprehensive logs analysis, historical trends, and doctor export.</p>
+          <h1 className="text-2xl font-bold tracking-tight mb-1">{t('reports.title')}</h1>
+          <p className="text-xs text-muted-foreground">{t('reports.subtitle')}</p>
         </div>
 
         <button
@@ -150,7 +152,7 @@ export default function ReportsPage() {
           className="px-4 py-2.5 rounded-full bg-gradient-to-r from-pink-500 to-violet-500 hover:opacity-95 text-white font-bold text-xs flex items-center justify-center gap-2 shadow-lg shadow-pink-500/20 transition-all active:scale-95 cursor-pointer w-full sm:w-auto shrink-0"
         >
           <Stethoscope className="w-4 h-4" />
-          <span>Export Doctor-Ready Report</span>
+          <span>{t('reports.exportPdf')}</span>
         </button>
       </div>
 

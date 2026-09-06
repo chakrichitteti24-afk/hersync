@@ -35,6 +35,7 @@ import {
   type CheckinIndicators,
 } from '@/lib/questions/checkin-questions';
 import { CheckinRewardBar } from '@/components/checkin/CheckinRewardBar';
+import { useTranslation } from '@/i18n/useTranslation';
 
 /**
  * Enforce strict local time-based periods:
@@ -105,6 +106,7 @@ function useNextSlotCountdown(activeSlot: CheckinSlot, isCompleted: boolean) {
 
 export default function CheckInPage() {
   const router = useRouter();
+  const { t } = useTranslation();
   const { wellnessMode, refreshAll, setWellnessTasks } = useHerSync();
   const mode = (wellnessMode as WellnessMode) || 'general';
 
@@ -605,10 +607,10 @@ export default function CheckInPage() {
   const progressPct = Math.round(((currentStep + 1) / totalSteps) * 100);
   const slotLabel =
     activeSlot === 'morning'
-      ? 'Morning 🌅'
+      ? `${t('checkin.morningSlot')} 🌅`
       : activeSlot === 'afternoon'
-      ? 'Afternoon ☀️'
-      : 'Evening 🌙';
+      ? `${t('checkin.afternoonSlot')} ☀️`
+      : `${t('checkin.eveningSlot')} 🌙`;
 
   const categoryIcons: Record<string, any> = {
     sleep: Moon,

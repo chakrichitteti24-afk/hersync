@@ -9,8 +9,11 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { motion } from 'framer-motion';
+import { useTranslation } from '@/i18n/useTranslation';
+import { LanguageSelector } from '@/components/ui/LanguageSelector';
 
 export default function ForgotPasswordPage() {
+  const { t } = useTranslation();
   const [email, setEmail] = useState('');
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
@@ -38,12 +41,15 @@ export default function ForgotPasswordPage() {
   return (
     <div className="flex flex-col items-center justify-center min-h-dvh bg-background py-8 px-4 sm:py-12 sm:px-6 w-full max-w-full overflow-x-hidden selection:bg-pink-500/20">
       <div className="w-full max-w-md space-y-6 sm:space-y-8 animate-in fade-in zoom-in duration-500">
-        
+        <div className="flex justify-end">
+          <LanguageSelector variant="header" />
+        </div>
+
         <div className="text-center space-y-2">
           <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-gradient-to-tr from-pink-500 to-violet-500 text-white mb-2 shadow-lg shadow-pink-500/20">
             <Heart className="w-6 h-6 fill-white" />
           </div>
-          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground">Reset Password</h1>
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground">{t('auth.resetPasswordTitle')}</h1>
           <p className="text-xs sm:text-sm text-muted-foreground">We&apos;ll send you a secure link to reset it.</p>
         </div>
 
@@ -51,7 +57,7 @@ export default function ForgotPasswordPage() {
           <form onSubmit={handleReset}>
             <CardContent className="space-y-4 pt-6 px-4 sm:px-6">
               <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
+                <Label htmlFor="email">{t('auth.email')}</Label>
                 <div className="relative flex items-center">
                   <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
                   <Input
@@ -85,12 +91,12 @@ export default function ForgotPasswordPage() {
                 disabled={loading}
               >
                 {loading ? <Loader2 className="w-5 h-5 animate-spin mr-2" /> : null}
-                {loading ? 'Sending...' : 'Send Reset Link'}
+                {loading ? t('common.loading') : t('auth.sendResetLink')}
               </Button>
               <p className="text-sm text-center text-muted-foreground w-full">
-                Remember your password?{' '}
+                {t('auth.hasAccount')}{' '}
                 <Link href="/login" className="font-medium text-pink-500 hover:text-pink-600 transition-colors">
-                  Sign in
+                  {t('auth.signIn')}
                 </Link>
               </p>
             </CardFooter>

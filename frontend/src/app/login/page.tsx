@@ -10,8 +10,11 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { motion } from 'framer-motion';
+import { useTranslation } from '@/i18n/useTranslation';
+import { LanguageSelector } from '@/components/ui/LanguageSelector';
 
 export default function LoginPage() {
+  const { t } = useTranslation();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [info, setInfo] = useState('');
@@ -97,21 +100,26 @@ export default function LoginPage() {
     <div className="flex flex-col items-center justify-center min-h-dvh bg-background py-8 px-4 sm:py-12 sm:px-6 w-full max-w-full overflow-x-hidden selection:bg-pink-500/20">
       <div className="w-full max-w-md mx-auto space-y-5 sm:space-y-6 animate-in fade-in duration-300">
         
+        {/* Language Selector in Auth Header */}
+        <div className="flex justify-end">
+          <LanguageSelector variant="header" />
+        </div>
+
         <div className="text-center space-y-2">
           <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-gradient-to-tr from-pink-500 to-violet-500 text-white mb-2 shadow-lg shadow-pink-500/20">
             <Heart className="w-6 h-6 fill-white" />
           </div>
-          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground">Welcome Back</h1>
-          <p className="text-xs sm:text-sm text-muted-foreground">Sign in to your Svanexa account</p>
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground">{t('auth.welcomeBack')}</h1>
+          <p className="text-xs sm:text-sm text-muted-foreground">{t('auth.signInSubtitle')}</p>
         </div>
 
         {/* Segmented Tab Control */}
         <div className="w-full grid grid-cols-2 p-1 rounded-xl bg-secondary/50 border border-border/40">
           <Link href="/login" className="text-center py-2.5 sm:py-2 text-sm font-semibold rounded-lg bg-background shadow-sm text-foreground transition-all">
-            Sign In
+            {t('auth.signIn')}
           </Link>
           <Link href="/signup" className="text-center py-2.5 sm:py-2 text-sm font-medium rounded-lg text-muted-foreground hover:text-foreground transition-colors">
-            Sign Up
+            {t('auth.signUp')}
           </Link>
         </div>
 
@@ -119,7 +127,7 @@ export default function LoginPage() {
           <CardContent className="pt-6 pb-6 px-4 sm:px-6">
             <form onSubmit={handleLogin} className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
+                <Label htmlFor="email">{t('auth.email')}</Label>
                 <div className="relative flex items-center">
                   <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
                   <Input
@@ -136,9 +144,9 @@ export default function LoginPage() {
 
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <Label htmlFor="password">Password</Label>
+                  <Label htmlFor="password">{t('auth.password')}</Label>
                   <Link href="/forgot-password" className="text-xs font-medium text-pink-500 hover:text-pink-600 transition-colors">
-                    Forgot password?
+                    {t('auth.forgotPassword')}
                   </Link>
                 </div>
                 <div className="relative flex items-center">
@@ -182,7 +190,7 @@ export default function LoginPage() {
                 disabled={loading}
               >
                 {loading ? <Loader2 className="w-5 h-5 animate-spin mr-2" /> : null}
-                {loading ? 'Signing in...' : 'Sign In'}
+                {loading ? t('common.loading') : t('auth.signIn')}
               </Button>
             </form>
           </CardContent>

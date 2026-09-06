@@ -9,6 +9,7 @@ import { apiFetch } from '@/utils/api-client';
 import { useHerSync } from '@/context/HerSyncContext';
 import { format } from 'date-fns';
 import { safeFormat } from '@/utils/date-utils';
+import { useTranslation } from '@/i18n/useTranslation';
 import styles from './wellness.module.css';
 
 class WellnessErrorBoundary extends Component<{ children: ReactNode }, { hasError: boolean }> {
@@ -148,6 +149,7 @@ function getCurrentSlot(): TimeSlot {
 }
 
 function WellnessPlanContent() {
+  const { t } = useTranslation();
   const { aiName, setWellnessTasks, refreshAll, checkinSlots, updateCoinBalanceLocally } = useHerSync();
 
   const [loading, setLoading]       = useState(true);
@@ -442,8 +444,8 @@ function WellnessPlanContent() {
             {format(new Date(), 'EEEE, MMMM d, yyyy')}
           </span>
         </div>
-        <h1 className={styles.title}>Daily Wellness Journey</h1>
-        <p className={styles.subtitle}>Personalized plan for {modeName} mode · {done}/{total} tasks complete</p>
+        <h1 className={styles.title}>{t('wellness.title')}</h1>
+        <p className={styles.subtitle}>{t('wellness.subtitle')} · {done}/{total} {t('dashboard.completed')}</p>
       </motion.div>
 
       {/* ── 2-COLUMN GRID ── */}

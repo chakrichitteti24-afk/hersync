@@ -31,6 +31,7 @@ import { createClient } from '@/utils/supabase/client';
 import { HabitBadges } from '@/components/profile/HabitBadges';
 import { NotificationSettings } from '@/components/profile/NotificationSettings';
 import { useHerSync } from '@/context/HerSyncContext';
+import { useTranslation } from '@/i18n/useTranslation';
 
 type WellnessMode = 'general' | 'pcos' | 'pregnancy';
 
@@ -119,6 +120,7 @@ const WELLNESS_MODES: {
 export default function ProfilePage() {
   const router = useRouter();
   const supabase = createClient();
+  const { t, setLanguage } = useTranslation();
   const { refreshAll, updateLanguage, coinBalance } = useHerSync();
 
   const [loading, setLoading] = useState(true);
@@ -393,11 +395,12 @@ export default function ProfilePage() {
       }
       try {
         await updateLanguage(companionLanguage);
+        await setLanguage(companionLanguage);
       } catch (err) {
         console.warn('Language sync error:', err);
       }
 
-      toast.success('Profile saved successfully.');
+      toast.success(t('common.saved'));
 
       // 4. Return to read-only mode & refresh app context
       setIsEditing(false);
@@ -465,8 +468,8 @@ export default function ProfilePage() {
           ───────────────────────────────────────────────────────────────────────── */}
       <div className="flex items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-foreground">Profile & Settings</h1>
-          <p className="text-xs text-muted-foreground">Manage your personal details and wellness preferences</p>
+          <h1 className="text-2xl font-bold tracking-tight text-foreground">{t('profile.title')}</h1>
+          <p className="text-xs text-muted-foreground">{t('profile.subtitle')}</p>
         </div>
 
         {/* Visually distinct Logout at top-right */}
@@ -476,7 +479,7 @@ export default function ProfilePage() {
           className="px-4 py-2 rounded-full border border-rose-500/30 hover:bg-rose-500/10 text-rose-400 hover:text-rose-300 text-xs font-semibold flex items-center gap-1.5 transition-all shadow-sm active:scale-95 shrink-0 min-h-[38px]"
         >
           <LogOut className="w-3.5 h-3.5" />
-          <span>Logout</span>
+          <span>{t('common.signOut')}</span>
         </button>
       </div>
 
@@ -853,13 +856,17 @@ export default function ProfilePage() {
             {/* Companion Language */}
             <div className="space-y-1.5">
               <label htmlFor="companionLanguageInput" className="text-xs font-semibold text-foreground/90 flex items-center gap-1.5">
-                <Globe className="w-3.5 h-3.5 text-pink-400" /> Default Language
+                <Globe className="w-3.5 h-3.5 text-pink-400" /> {t('profile.appLanguage')}
               </label>
               <select
                 id="companionLanguageInput"
                 value={companionLanguage}
                 disabled={!isEditing}
-                onChange={e => setCompanionLanguage(e.target.value)}
+                onChange={async (e) => {
+                  const val = e.target.value;
+                  setCompanionLanguage(val);
+                  await setLanguage(val);
+                }}
                 className={`w-full h-11 px-3.5 rounded-xl text-sm transition-all ${
                   isEditing
                     ? 'bg-secondary/50 border border-border text-foreground focus:outline-none focus:ring-2 focus:ring-pink-500/40 cursor-pointer'

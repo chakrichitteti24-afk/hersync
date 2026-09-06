@@ -7,6 +7,7 @@ import { Sidebar } from './Sidebar';
 import { CoinBalanceBadge } from '@/components/ui/CoinBalanceBadge';
 import { NotificationBell } from '@/components/notifications/NotificationBell';
 import { PrivacyToggle } from '@/components/ui/PrivacyToggle';
+import { LanguageSelector } from '@/components/ui/LanguageSelector';
 import Image from 'next/image';
 import Link from 'next/link';
 
@@ -24,6 +25,9 @@ export function Navbar() {
       </Link>
 
       <div className="flex items-center gap-1.5">
+        {/* Language Switcher */}
+        <LanguageSelector variant="compact" align="end" />
+
         {/* Privacy Glance Toggle */}
         <PrivacyToggle />
 

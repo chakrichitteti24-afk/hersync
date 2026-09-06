@@ -34,8 +34,10 @@ import {
 } from '@/lib/rewards/rewards-config';
 import { UserRewardSummary } from '@/lib/rewards/rewards-service';
 import Link from 'next/link';
+import { useTranslation } from '@/i18n/useTranslation';
 
 export default function RewardsPage() {
+  const { t } = useTranslation();
   const { coinBalance, updateCoinBalanceLocally, triggerCoinAnimation } = useHerSync();
   const { addCustomNotification } = useNotifications();
 
@@ -226,14 +228,14 @@ export default function RewardsPage() {
         <div>
           <div className="flex items-center gap-2">
             <span className="text-xs font-extrabold uppercase tracking-widest text-amber-400 bg-amber-500/10 px-2.5 py-0.5 rounded-full border border-amber-500/20">
-              🪙 Rewards & Referrals
+              🪙 {t('nav.rewards')}
             </span>
           </div>
           <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground mt-1">
-            Svanexa Rewards
+            {t('rewards.title')}
           </h1>
           <p className="text-xs sm:text-sm text-muted-foreground">
-            Earn coins through daily wellness routines, invite friends, and redeem for rewards.
+            {t('rewards.subtitle')}
           </p>
         </div>
 

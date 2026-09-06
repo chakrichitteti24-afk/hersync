@@ -21,9 +21,11 @@ import { HormoneFoodSolver } from '@/components/nutrition/HormoneFoodSolver';
 import { WeatherWidget } from '@/components/weather/WeatherWidget';
 import { triggerHaptic } from '@/utils/haptics';
 import { DashboardNotificationPrompt } from '@/components/dashboard/DashboardNotificationPrompt';
+import { useTranslation } from '@/i18n/useTranslation';
 
 export default function DashboardPage() {
   const [mounted, setMounted] = useState(false);
+  const { t } = useTranslation();
   const {
     profile,
     preferences,
@@ -67,16 +69,17 @@ export default function DashboardPage() {
   ];
 
 
-  const getGreetingTime = () => {
+  const getGreeting = () => {
     const hour = new Date().getHours();
-    if (hour >= 6 && hour < 12) return 'Morning';
-    if (hour >= 12 && hour < 18) return 'Afternoon';
-    return 'Evening';
+    if (hour >= 6 && hour < 12) return t('dashboard.goodMorning');
+    if (hour >= 12 && hour < 18) return t('dashboard.goodAfternoon');
+    return t('dashboard.goodEvening');
   };
 
-  const greeting = `Good ${getGreetingTime()}`;
-  const isMorning = getGreetingTime() === 'Morning';
-  const isEvening = getGreetingTime() === 'Evening';
+  const greeting = getGreeting();
+  const currentHour = new Date().getHours();
+  const isMorning = currentHour >= 6 && currentHour < 12;
+  const isEvening = currentHour >= 18;
 
   const hasDataToday = !!l && (l.sleep !== null || l.water !== null || l.mood !== null || l.stress !== null || l.exercise !== null);
 
@@ -315,7 +318,7 @@ export default function DashboardPage() {
       >
         <div>
           <h1 className={styles.pageTitle}>{greeting}, {userName}</h1>
-          <p className={styles.pageSubtitle}>Here is your wellness overview for today.</p>
+          <p className={styles.pageSubtitle}>{t('dashboard.summarySubtitle')}</p>
         </div>
         <Link
           href="/check-in"
@@ -328,9 +331,9 @@ export default function DashboardPage() {
           }}
         >
           {allSlotsComplete ? (
-            <>Review Check-ins <CheckSquare className="w-3.5 h-3.5" /></>
+            <>{t('dashboard.allSlotsComplete')} <CheckSquare className="w-3.5 h-3.5" /></>
           ) : (
-            <>Complete Check-in <ArrowRight className="w-3.5 h-3.5" /></>
+            <>{t('dashboard.completeCheckin')} <ArrowRight className="w-3.5 h-3.5" /></>
           )}
         </Link>
       </motion.header>

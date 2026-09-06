@@ -5,6 +5,7 @@ import { useHerSync } from '@/context/HerSyncContext';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Sparkles, Check, History, Loader2, Heart, ShieldCheck, Coins } from 'lucide-react';
 import { toast } from 'sonner';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface StoreItem {
   id: string;
@@ -317,6 +318,7 @@ const COMPANION_STYLE_ITEMS: StoreItem[] = [
 
 
 export function SvanexaStore() {
+  const { t } = useTranslation();
   const {
     coinBalance,
     unlockedItems,
@@ -426,15 +428,15 @@ export function SvanexaStore() {
       <div className="flex items-center justify-between gap-4 pt-1 pb-2">
         <div>
           <h1 className="text-xl sm:text-2xl font-bold text-white tracking-tight flex items-center gap-2">
-            Store
+            {t('store.title')}
           </h1>
-          <p className="text-xs text-[#9d91c4]">Personalize your app appearance</p>
+          <p className="text-xs text-[#9d91c4]">{t('store.subtitle')}</p>
         </div>
 
         {/* Minimal Balance Chip */}
         <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-300 text-xs font-bold shadow-sm">
           <span>🪙</span>
-          <span>{coinBalance} Coins</span>
+          <span>{coinBalance} {t('common.coins')}</span>
         </div>
       </div>
 

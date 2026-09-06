@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
 import './globals.css';
 import { Toaster } from '@/components/ui/sonner';
+import { I18nProvider } from '@/i18n/useTranslation';
 
 const inter = Inter({
   subsets: ['latin'],
@@ -34,9 +35,12 @@ export default function RootLayout({
         <link rel="manifest" href="/manifest.webmanifest" crossOrigin="anonymous" />
       </head>
       <body className={`${inter.className} bg-background text-foreground antialiased`} suppressHydrationWarning>
-        {children}
+        <I18nProvider>
+          {children}
+        </I18nProvider>
         <Toaster />
       </body>
     </html>
   );
 }
+

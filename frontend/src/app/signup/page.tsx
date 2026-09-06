@@ -27,6 +27,8 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { useTranslation } from '@/i18n/useTranslation';
+import { LanguageSelector } from '@/components/ui/LanguageSelector';
 
 const ModeCard = ({
   mode,
@@ -78,6 +80,7 @@ const ModeCard = ({
 };
 
 export default function SignUpPage() {
+  const { t } = useTranslation();
   const [step, setStep] = useState(1);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -351,13 +354,18 @@ export default function SignUpPage() {
   return (
     <div className="flex flex-col items-center justify-center min-h-dvh bg-background py-8 px-4 sm:py-12 sm:px-6 w-full max-w-full overflow-x-hidden selection:bg-pink-500/20">
       <div className="w-full max-w-md mx-auto space-y-5 sm:space-y-6 animate-in fade-in duration-300">
+        {/* Language selector */}
+        <div className="flex justify-end">
+          <LanguageSelector variant="header" />
+        </div>
+
         {/* Brand Header */}
         <div className="text-center space-y-2">
           <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-gradient-to-tr from-pink-500 to-violet-500 text-white mb-1 shadow-lg shadow-pink-500/20">
             <Heart className="w-6 h-6 fill-white" />
           </div>
-          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground">Join Svanexa</h1>
-          <p className="text-xs sm:text-sm text-muted-foreground">Your AI-powered wellness journey begins here.</p>
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground">{t('auth.createAccount')}</h1>
+          <p className="text-xs sm:text-sm text-muted-foreground">{t('auth.signUpSubtitle')}</p>
         </div>
 
         {/* Segmented Tab Control */}
@@ -366,13 +374,13 @@ export default function SignUpPage() {
             href="/login"
             className="text-center py-2.5 sm:py-2 text-sm font-medium rounded-lg text-muted-foreground hover:text-foreground transition-colors"
           >
-            Sign In
+            {t('auth.signIn')}
           </Link>
           <Link
             href="/signup"
             className="text-center py-2.5 sm:py-2 text-sm font-semibold rounded-lg bg-background shadow-sm text-foreground transition-all"
           >
-            Sign Up
+            {t('auth.signUp')}
           </Link>
         </div>
 
@@ -451,7 +459,7 @@ export default function SignUpPage() {
 
                   <div className="space-y-1.5">
                     <Label htmlFor="email" className="text-xs sm:text-sm font-medium text-foreground">
-                      Email Address
+                      {t('auth.email')}
                     </Label>
                     <div className="relative flex items-center">
                       <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
@@ -469,7 +477,7 @@ export default function SignUpPage() {
 
                   <div className="space-y-1.5">
                     <Label htmlFor="password" className="text-xs sm:text-sm font-medium text-foreground">
-                      Password
+                      {t('auth.password')}
                     </Label>
                     <div className="relative flex items-center">
                       <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
@@ -496,7 +504,7 @@ export default function SignUpPage() {
 
                   <div className="space-y-1.5">
                     <Label htmlFor="confirmPassword" className="text-xs sm:text-sm font-medium text-foreground">
-                      Confirm Password
+                      {t('auth.confirmPassword')}
                     </Label>
                     <div className="relative flex items-center">
                       <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />

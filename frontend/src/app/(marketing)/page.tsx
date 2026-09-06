@@ -1,9 +1,14 @@
+'use client';
 
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { ArrowRight, Activity, CalendarHeart, Sparkles, Droplets } from 'lucide-react';
+import { LanguageSelector } from '@/components/ui/LanguageSelector';
+import { useTranslation } from '@/i18n/useTranslation';
 
 export default function LandingPage() {
+  const { t } = useTranslation();
+
   return (
     <div className="min-h-screen flex flex-col">
       <header className="px-6 py-4 flex items-center justify-between border-b border-border/40 backdrop-blur-md sticky top-0 z-50">
@@ -18,11 +23,14 @@ export default function LandingPage() {
           <a href="#testimonials" className="text-sm text-muted-foreground hover:text-foreground transition-colors">Testimonials</a>
           <a href="#faq" className="text-sm text-muted-foreground hover:text-foreground transition-colors">FAQ</a>
         </nav>
-        <Link href="/login">
-          <Button className="bg-gradient-to-r from-pink-600 to-violet-600 hover:from-pink-500 hover:to-violet-500 text-white border-0">
-            Go to App
-          </Button>
-        </Link>
+        <div className="flex items-center gap-3">
+          <LanguageSelector variant="header" />
+          <Link href="/login">
+            <Button className="bg-gradient-to-r from-pink-600 to-violet-600 hover:from-pink-500 hover:to-violet-500 text-white border-0">
+              {t('auth.signIn')}
+            </Button>
+          </Link>
+        </div>
       </header>
 
       <main className="flex-1">

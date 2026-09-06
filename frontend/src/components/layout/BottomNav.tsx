@@ -6,16 +6,24 @@ import { usePathname } from 'next/navigation';
 import { Sparkles, CalendarHeart, Award, User } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { triggerHaptic } from '@/utils/haptics';
+import { useTranslation } from '@/i18n/useTranslation';
 
-const mobileNavItems = [
-  { name: 'Today', href: '/dashboard', icon: Sparkles },
-  { name: 'Cycle', href: '/cycle', icon: CalendarHeart },
-  { name: 'Plan', href: '/wellness-plan', icon: Award },
-  { name: 'You', href: '/profile', icon: User },
+interface MobileNavItemConfig {
+  key: 'today' | 'cycle' | 'plan' | 'you';
+  href: string;
+  icon: any;
+}
+
+const mobileNavConfig: MobileNavItemConfig[] = [
+  { key: 'today', href: '/dashboard', icon: Sparkles },
+  { key: 'cycle', href: '/cycle', icon: CalendarHeart },
+  { key: 'plan', href: '/wellness-plan', icon: Award },
+  { key: 'you', href: '/profile', icon: User },
 ];
 
 export const BottomNav = memo(function BottomNav() {
   const pathname = usePathname();
+  const { t } = useTranslation();
 
   // Hide BottomNav on check-in page so questionnaire action controls are completely unobstructed on mobile
   if (pathname === '/check-in') {
@@ -35,15 +43,16 @@ export const BottomNav = memo(function BottomNav() {
       )}
     >
       <div className="grid grid-cols-4 items-center justify-items-center h-full w-full max-w-md mx-auto px-2">
-        {mobileNavItems.map((item) => {
+        {mobileNavConfig.map((item) => {
           const isActive =
             pathname === item.href ||
             (item.href === '/dashboard' && pathname === '/') ||
             (item.href !== '/dashboard' && pathname.startsWith(item.href));
+          const label = t(`nav.${item.key}`);
 
           return (
             <Link
-              key={item.name}
+              key={item.key}
               href={item.href}
               prefetch={true}
               onClick={() => triggerHaptic('selection')}
@@ -75,7 +84,7 @@ export const BottomNav = memo(function BottomNav() {
                   isActive ? 'text-foreground font-bold' : 'text-muted-foreground'
                 )}
               >
-                {item.name}
+                {label}
               </span>
             </Link>
           );

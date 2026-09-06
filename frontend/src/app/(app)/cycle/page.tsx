@@ -50,6 +50,7 @@ import { createClient } from '@/utils/supabase/client';
 import { useHerSync } from '@/context/HerSyncContext';
 import { toast } from 'sonner';
 import { safeFormat } from '@/utils/date-utils';
+import { useTranslation } from '@/i18n/useTranslation';
 import {
   CycleIntelligenceEngine,
   PhaseDetails,
@@ -226,6 +227,7 @@ CalendarDay.displayName = 'CalendarDay';
 
 export default function CycleTrackerPage() {
   const supabase = createClient();
+  const { t } = useTranslation();
   const {
     cycleHistory,
     setCycleHistory,
@@ -756,7 +758,7 @@ export default function CycleTrackerPage() {
         <div>
           <div className="flex items-center gap-2">
             <h1 className="text-2xl sm:text-3xl font-extrabold text-foreground tracking-tight">
-              Cycle & Period Care
+              {t('cycle.title')}
             </h1>
             <span
               className={`text-[11px] font-bold px-2.5 py-0.5 rounded-full border ${
@@ -775,7 +777,7 @@ export default function CycleTrackerPage() {
             </span>
           </div>
           <p className="text-xs text-muted-foreground mt-0.5">
-            Clinical cycle endocrinology, fertile window forecasts & hormonal phase sync
+            {t('cycle.subtitle')}
           </p>
         </div>
 

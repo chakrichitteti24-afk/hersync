@@ -9,8 +9,11 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { motion } from 'framer-motion';
+import { useTranslation } from '@/i18n/useTranslation';
+import { LanguageSelector } from '@/components/ui/LanguageSelector';
 
 export default function ResetPasswordPage() {
+  const { t } = useTranslation();
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -91,12 +94,15 @@ export default function ResetPasswordPage() {
   return (
     <div className="flex flex-col items-center justify-center min-h-dvh bg-background py-8 px-4 sm:py-12 sm:px-6 w-full max-w-full overflow-x-hidden selection:bg-pink-500/20">
       <div className="w-full max-w-md space-y-6 sm:space-y-8 animate-in fade-in zoom-in duration-500">
-        
+        <div className="flex justify-end">
+          <LanguageSelector variant="header" />
+        </div>
+
         <div className="text-center space-y-2">
           <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-gradient-to-tr from-pink-500 to-violet-500 text-white mb-2 shadow-lg shadow-pink-500/20">
             <Lock className="w-6 h-6 fill-white" />
           </div>
-          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground">New Password</h1>
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground">{t('auth.resetPasswordTitle')}</h1>
           <p className="text-xs sm:text-sm text-muted-foreground">Secure your account with a new password.</p>
         </div>
 
@@ -105,7 +111,7 @@ export default function ResetPasswordPage() {
             <CardContent className="space-y-4 pt-6 px-4 sm:px-6">
               
               <div className="space-y-2">
-                <Label htmlFor="password">New Password</Label>
+                <Label htmlFor="password">{t('auth.password')}</Label>
                 <div className="relative flex items-center">
                   <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
                   <Input
@@ -130,7 +136,7 @@ export default function ResetPasswordPage() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="confirmPassword">Confirm New Password</Label>
+                <Label htmlFor="confirmPassword">{t('auth.confirmPassword')}</Label>
                 <div className="relative flex items-center">
                   <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
                   <Input
@@ -168,7 +174,7 @@ export default function ResetPasswordPage() {
                 disabled={loading}
               >
                 {loading ? <Loader2 className="w-5 h-5 animate-spin mr-2" /> : null}
-                {loading ? 'Saving...' : 'Save New Password'}
+                {loading ? t('common.saving') : t('common.save')}
               </Button>
             </CardFooter>
           </form>

@@ -19,16 +19,25 @@ import { CoinBalanceBadge } from '@/components/ui/CoinBalanceBadge';
 import { NotificationBell } from '@/components/notifications/NotificationBell';
 import { PrivacyToggle } from '@/components/ui/PrivacyToggle';
 
-const navItems = [
-  { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
-  { name: 'Daily Care Journal', href: '/check-in', icon: CheckSquare },
-  { name: 'Cycle & Period Care', href: '/cycle', icon: CalendarHeart },
-  { name: 'Skin Care & Glow', href: '/skin', icon: Droplets },
-  { name: 'Wellness Care Plan', href: '/wellness-plan', icon: Award },
-  { name: 'Rewards & Referrals', href: '/rewards', icon: Gift },
-  { name: 'Svanexa Store', href: '/store', icon: ShoppingBag },
-  { name: 'Reports', href: '/reports', icon: LineChart },
-  { name: 'Profile', href: '/profile', icon: User },
+import { useTranslation } from '@/i18n/useTranslation';
+import { LanguageSelector } from '@/components/ui/LanguageSelector';
+
+interface NavItemConfig {
+  key: 'dashboard' | 'checkin' | 'cycle' | 'skin' | 'wellness' | 'rewards' | 'store' | 'reports' | 'profile';
+  href: string;
+  icon: any;
+}
+
+const navItemsConfig: NavItemConfig[] = [
+  { key: 'dashboard', href: '/dashboard', icon: LayoutDashboard },
+  { key: 'checkin', href: '/check-in', icon: CheckSquare },
+  { key: 'cycle', href: '/cycle', icon: CalendarHeart },
+  { key: 'skin', href: '/skin', icon: Droplets },
+  { key: 'wellness', href: '/wellness-plan', icon: Award },
+  { key: 'rewards', href: '/rewards', icon: Gift },
+  { key: 'store', href: '/store', icon: ShoppingBag },
+  { key: 'reports', href: '/reports', icon: LineChart },
+  { key: 'profile', href: '/profile', icon: User },
 ];
 
 export function Sidebar({
@@ -39,6 +48,7 @@ export function Sidebar({
   onNavigate?: () => void;
 }) {
   const pathname = usePathname();
+  const { t } = useTranslation();
 
   return (
     <div
@@ -67,11 +77,12 @@ export function Sidebar({
       {/* Navigation */}
       <div className="flex-1 overflow-auto py-4 px-3 scrollbar-thin">
         <nav className="space-y-1">
-          {navItems.map((item) => {
+          {navItemsConfig.map((item) => {
             const isActive = pathname === item.href;
+            const label = t(`nav.${item.key}`);
             return (
               <Link
-                key={item.name}
+                key={item.key}
                 href={item.href}
                 onClick={onNavigate}
                 className={cn(
@@ -87,7 +98,7 @@ export function Sidebar({
                     isActive ? 'text-primary' : 'text-muted-foreground group-hover:text-primary'
                   )}
                 />
-                <span className="flex-1 truncate">{item.name}</span>
+                <span className="flex-1 truncate">{label}</span>
                 {isActive && (
                   <div className="w-1.5 h-1.5 rounded-full bg-primary shadow-xs shadow-primary" />
                 )}
@@ -97,10 +108,11 @@ export function Sidebar({
         </nav>
       </div>
 
-      {/* Footer */}
-      <div className="px-4 py-4 border-t border-sidebar-border shrink-0">
+      {/* Footer with Language Selector & Medical Disclaimer */}
+      <div className="px-3 py-3 border-t border-sidebar-border shrink-0 space-y-2">
+        <LanguageSelector variant="pill" />
         <p className="text-[11px] text-muted-foreground/80 text-center leading-relaxed">
-          Svanexa AI is not medical advice.
+          {t('nav.disclaimer')}
         </p>
       </div>
     </div>
