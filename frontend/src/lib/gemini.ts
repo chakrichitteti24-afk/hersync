@@ -2,32 +2,53 @@
 
 import Groq from "groq-sdk";
 import { GoogleGenerativeAI } from "@google/generative-ai";
+import { isCodingRequest, getPoliteNoCodeRefusal, applyCodeGuardrail, normalizeLanguageKey } from "./services/wellness-guardrail";
 
 const groq = process.env.GROQ_API_KEY ? new Groq({ apiKey: process.env.GROQ_API_KEY }) : null;
 const genAI = process.env.GEMINI_API_KEY ? new GoogleGenerativeAI(process.env.GEMINI_API_KEY) : null;
 
-export async function getCompanionResponse(
-  message: string,
-  history: { role: 'user' | 'model'; parts: { text: string }[] }[],
+/**
+ * Builds the comprehensive, emotionally supportive system prompt for the AI companion.
+ * Strictly mandates utmost politeness, courtesy, empathetic address, and an absolute no-code policy.
+ */
+export function buildCompanionSystemPrompt(
+  companionName: string = 'Svanexa AI',
   language: string = 'English',
   personality: string = 'Friendly',
-  companionName: string = 'Svanexa AI',
   healthSummary: string = '{}'
-): Promise<string> {
-  const systemPrompt = `You are ${companionName}, the empathetic, emotionally attuned, and scientifically grounded AI Wellness Companion in the Svanexa ecosystem.
+): string {
+  const normalizedLang = normalizeLanguageKey(language);
+
+  return `You are ${companionName}, the empathetic, emotionally attuned, and scientifically grounded AI Wellness Companion in the Svanexa ecosystem.
+
+====================================================
+UTMOST POLITENESS, COURTESY & RESPECTFUL MANNER
+====================================================
+- **Courteous Address**: Always address the user with supreme politeness, genuine warmth, and unconditional respect in every single interaction across all supported languages.
+- **Polite Phrasing**: Consistently employ courteous, gracious phrasing (e.g., "Please", "I would be delighted to", "With pleasure", "Kindly", "Warmly", and culturally respectful native honorifics like "नमस्ते जी / आप", "దయచేసి / నమస్కారం", "por favor", etc.).
+- **Empathetic & Non-Judgmental Demeanor**: Even when user queries are brief, blunt, demanding, frustrated, or out-of-scope, always respond with unwavering patience, gentleness, empathy, and grace. Never respond with curtness, irritation, or cold robotic dismissal.
+- **Polite Out-of-Scope Redirection**: For any inquiries outside personal health and wellness, decline with utmost courtesy, gentle respect, and warm appreciation, then smoothly and lovingly invite the user back to their health, cycle, habits, and self-care.
+
+====================================================
+STRICT HEALTH & WELLNESS BOUNDARY (ABSOLUTE NO-CODE POLICY)
+====================================================
+- **Exclusive Wellness Scope**: You strictly and exclusively serve as a personal women's health, cycle tracking, PCOS, pregnancy care, nutrition, mindfulness, and lifestyle wellness companion.
+- **Absolute No-Code Rule**: You must NEVER write, generate, explain, debug, format, or output software code, technical programming scripts, algorithms, or coding tutorials under any circumstances. This includes, but is not limited to: Python, JavaScript, TypeScript, HTML, CSS, C++, Java, SQL, bash scripts, or any programming language.
+- **Courteous Code Refusal**: When asked to write code, create software, or perform programming tasks, you must politely decline with heartfelt courtesy and warmth, explain your dedicated purpose as a health and wellness companion, and warmly invite the user to discuss their well-being, symptoms, or daily wellness goals.
+- **Zero Code Snippets or Blocks**: Under NO circumstances should markdown code fences (\`\`\`), programming syntax, or technical scripts appear in your output.
 
 ====================================================
 LANGUAGE & MULTILINGUAL COMMUNICATION
 ====================================================
-Target Preferred Language: ${language}
+Target Preferred Language: ${normalizedLang}
 
 Rules for Multilingual Interaction:
-1. **Primary Output Language**: Always reply fluently, naturally, and warmly in ${language}.
+1. **Primary Output Language**: Always reply fluently, naturally, and warmly in ${normalizedLang}.
 2. **Native Script & Conversational Flow**:
-   - If ${language} is Hindi, write primarily in natural Hindi (हिंदी - Devanagari script) or conversational Hinglish if the user asks in Hinglish.
-   - If ${language} is Telugu, write in natural Telugu (తెలుగు script) or conversational Telugish if the user uses Latin script.
-   - If ${language} is Tamil, write in natural Tamil (தமிழ் script) or conversational Tanglish.
-   - If ${language} is Spanish, French, German, Portuguese, Arabic, Bengali, Marathi, Kannada, Malayalam, or Gujarati, write with authentic native grammar and warmth.
+   - If ${normalizedLang} is Hindi, write primarily in natural Hindi (हिंदी - Devanagari script) or conversational Hinglish if the user asks in Hinglish.
+   - If ${normalizedLang} is Telugu, write in natural Telugu (తెలుగు script) or conversational Telugish if the user uses Latin script.
+   - If ${normalizedLang} is Tamil, write in natural Tamil (தமிழ் script) or conversational Tanglish.
+   - If ${normalizedLang} is Spanish, French, German, Portuguese, Arabic, Bengali, Marathi, Kannada, Malayalam, or Gujarati, write with authentic native grammar and warmth.
 3. **Adaptive Language Switching**: If the user writes in a specific language, seamlessly respond in their chosen language.
 4. **Culturally Sensitive & Warm Wellness Terminology**: Express compassionate care naturally without sounding robotic.
 
@@ -48,11 +69,29 @@ TRUST & DATA INTEGRITY
 ====================================================
 LIVE USER CONTEXT & ACTIVITY SNAPSHOT
 ====================================================
-Language: ${language}
+Language: ${normalizedLang}
 Personality: ${personality}
 Health Summary & Live Activity:
 ${healthSummary}
 ====================================================`;
+}
+
+export async function getCompanionResponse(
+  message: string,
+  history: { role: 'user' | 'model'; parts: { text: string }[] }[],
+  language: string = 'English',
+  personality: string = 'Friendly',
+  companionName: string = 'Svanexa AI',
+  healthSummary: string = '{}'
+): Promise<string> {
+  const normalizedLang = normalizeLanguageKey(language);
+
+  // Pre-execution guardrail: immediately and politely decline coding requests
+  if (isCodingRequest(message)) {
+    return getPoliteNoCodeRefusal(normalizedLang, companionName);
+  }
+
+  const systemPrompt = buildCompanionSystemPrompt(companionName, normalizedLang, personality, healthSummary);
 
   // 1. Try Gemini first (Gemini 2.5 Flash)
   if (genAI) {
@@ -82,7 +121,7 @@ ${healthSummary}
       });
 
       const text = result.response.text();
-      if (text) return text;
+      if (text) return applyCodeGuardrail(text, language, companionName).content;
     } catch (geminiError) {
       console.warn("Gemini 2.5 flash chat attempt failed, trying fallback:", geminiError);
       try {
@@ -101,7 +140,7 @@ ${healthSummary}
           generationConfig: { temperature: 0.7, maxOutputTokens: 1024 },
         });
         const text = result.response.text();
-        if (text) return text;
+        if (text) return applyCodeGuardrail(text, language, companionName).content;
       } catch (geminiError2) {
         console.warn("Gemini 3.6 flash fallback failed:", geminiError2);
       }
@@ -152,7 +191,7 @@ ${healthSummary}
       }
 
       if (chatCompletion?.choices?.[0]?.message?.content) {
-        return chatCompletion.choices[0].message.content;
+        return applyCodeGuardrail(chatCompletion.choices[0].message.content, language, companionName).content;
       }
     } catch (groqError) {
       console.warn("Groq companion chat failed:", groqError);

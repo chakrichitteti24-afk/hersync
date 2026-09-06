@@ -24,7 +24,9 @@ import {
   X,
   RotateCcw,
   Globe,
+  ChevronRight,
 } from 'lucide-react';
+import Link from 'next/link';
 import { createClient } from '@/utils/supabase/client';
 import { HabitBadges } from '@/components/profile/HabitBadges';
 import { NotificationSettings } from '@/components/profile/NotificationSettings';
@@ -117,7 +119,7 @@ const WELLNESS_MODES: {
 export default function ProfilePage() {
   const router = useRouter();
   const supabase = createClient();
-  const { refreshAll, updateLanguage } = useHerSync();
+  const { refreshAll, updateLanguage, coinBalance } = useHerSync();
 
   const [loading, setLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
@@ -543,6 +545,34 @@ export default function ProfilePage() {
           </div>
         )}
       </motion.div>
+
+      {/* 🪙 Compact Svanexa Rewards Summary */}
+      <div className="p-4 sm:p-5 rounded-3xl bg-gradient-to-r from-amber-500/10 via-card/80 to-background border border-amber-500/25 flex items-center justify-between gap-4 shadow-sm backdrop-blur-md">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-2xl bg-amber-500/15 border border-amber-500/30 flex items-center justify-center text-lg shrink-0">
+            🪙
+          </div>
+          <div>
+            <div className="flex items-baseline gap-2">
+              <span className="text-base sm:text-lg font-black tracking-tight text-foreground font-mono">
+                {new Intl.NumberFormat('en-IN').format(coinBalance || 0)}
+              </span>
+              <span className="text-xs font-bold text-amber-400">Svanexa Coins</span>
+            </div>
+            <p className="text-[11px] text-muted-foreground">
+              10,000 Coins = ₹100 • Redeemable for cash rewards
+            </p>
+          </div>
+        </div>
+
+        <Link
+          href="/rewards"
+          className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/30 text-amber-300 font-bold text-xs transition-all active:scale-95 shrink-0 cursor-pointer"
+        >
+          <span>View Rewards</span>
+          <ChevronRight className="w-3.5 h-3.5" />
+        </Link>
+      </div>
 
       {/* ─────────────────────────────────────────────────────────────────────────
           FORM CONTAINER

@@ -2,109 +2,13 @@ import { NextResponse } from 'next/server';
 import { getAuthenticatedUser } from '@/utils/supabase/server';
 import { extractDateFromRequest } from '@/utils/date-utils';
 
+import { REWARD_CONFIG } from '@/lib/rewards/rewards-config';
+import { awardCoinsWithDailyCap } from '@/lib/rewards/rewards-service';
+
 type CheckinSlot = 'morning' | 'afternoon' | 'evening';
 const VALID_SLOTS: CheckinSlot[] = ['morning', 'afternoon', 'evening'];
-const SLOT_COIN_AMOUNT = 10;
-const BONUS_COIN_AMOUNT = 10;
-
-async function awardCoinsHelper(
-  supabase: any,
-  userId: string,
-  amount: number,
-  type: string,
-  refId: string,
-  description: string
-): Promise<{ awarded: boolean; newBalance: number }> {
-  // 1. Check if already claimed / awarded
-  try {
-    const { data: existingTx } = await supabase
-      .from('user_coin_transactions')
-      .select('id')
-      .eq('user_id', userId)
-      .eq('reference_id', refId)
-      .limit(1)
-      .maybeSingle();
-
-    if (existingTx) {
-      const { data: balRow } = await supabase
-        .from('user_coin_balances')
-        .select('balance')
-        .eq('user_id', userId)
-        .maybeSingle();
-      const currentBalance = typeof balRow?.balance === 'number' ? balRow.balance : 0;
-      return { awarded: false, newBalance: currentBalance };
-    }
-  } catch (checkErr) {
-    console.warn('[awardCoinsHelper check warning]', checkErr);
-  }
-
-  // 2. Try PostgreSQL RPC award_user_coins
-  try {
-    const { data: rpcResult, error: rpcError } = await supabase.rpc('award_user_coins', {
-      p_user_id: userId,
-      p_amount: amount,
-      p_type: type,
-      p_ref_id: refId,
-      p_description: description,
-    });
-
-    if (!rpcError && rpcResult !== null && rpcResult !== undefined) {
-      if (typeof rpcResult === 'object') {
-        const parsedBalance = typeof rpcResult.new_balance === 'number' ? rpcResult.new_balance : Number(rpcResult.new_balance ?? 0);
-        return { awarded: rpcResult.awarded !== false, newBalance: isNaN(parsedBalance) ? amount : parsedBalance };
-      }
-      const numBal = Number(rpcResult);
-      return { awarded: true, newBalance: isNaN(numBal) ? amount : numBal };
-    }
-  } catch (rpcErr) {
-    console.warn('[award_user_coins RPC fallback]', rpcErr);
-  }
-
-  // 3. Resilient Direct Table Operations Fallback
-  try {
-    const { data: curBal } = await supabase
-      .from('user_coin_balances')
-      .select('balance')
-      .eq('user_id', userId)
-      .maybeSingle();
-
-    const currentBalance = typeof curBal?.balance === 'number' ? curBal.balance : 0;
-    const newBalance = currentBalance + amount;
-
-    await supabase.from('user_coin_balances').upsert(
-      {
-        user_id: userId,
-        balance: newBalance,
-        updated_at: new Date().toISOString(),
-      },
-      { onConflict: 'user_id' }
-    );
-
-    // Try standard transaction_type column first, then fallback to type column
-    const { error: txErr } = await supabase.from('user_coin_transactions').insert({
-      user_id: userId,
-      amount,
-      transaction_type: type,
-      reference_id: refId,
-      description,
-    });
-
-    if (txErr) {
-      await supabase.from('user_coin_transactions').insert({
-        user_id: userId,
-        amount,
-        type,
-        reference_id: refId,
-        description,
-      });
-    }
-
-    return { awarded: true, newBalance };
-  } catch (directErr) {
-    console.warn('[direct coin award fallback warning]', directErr);
-    return { awarded: true, newBalance: amount };
-  }
-}
+const SLOT_COIN_AMOUNT = REWARD_CONFIG.REWARDS.DAILY_CHECKIN_SLOT;
+const BONUS_COIN_AMOUNT = REWARD_CONFIG.REWARDS.DAILY_CHECKIN_ALL_BONUS;
 
 export async function POST(req: Request) {
   try {
@@ -175,13 +79,14 @@ export async function POST(req: Request) {
       const slotRef = `checkin:${today}:${slot}`;
       const slotCapName = slot.charAt(0).toUpperCase() + slot.slice(1);
 
-      const { awarded, newBalance } = await awardCoinsHelper(
+      const { awarded, coinsEarned, newBalance, message: awardMsg, capReached } = await awardCoinsWithDailyCap(
         supabase,
         userId,
         SLOT_COIN_AMOUNT,
         'checkin_slot',
         slotRef,
-        `${slotCapName} check-in reward claimed`
+        `${slotCapName} check-in reward claimed`,
+        true
       );
 
       // Mark claimed in slotMeta
@@ -198,12 +103,15 @@ export async function POST(req: Request) {
         data: {
           slot,
           awarded,
-          alreadyClaimed: !awarded,
-          coinsEarned: awarded ? SLOT_COIN_AMOUNT : 0,
+          alreadyClaimed: !awarded && !capReached,
+          capReached,
+          coinsEarned,
           newBalance,
-          message: awarded
-            ? `+${SLOT_COIN_AMOUNT} coins claimed for your ${slotCapName} check-in! 🪙`
-            : `${slotCapName} reward was already claimed.`,
+          message: capReached
+            ? `Daily limit of ${REWARD_CONFIG.DAILY_COIN_LIMIT} coins reached today.`
+            : awarded
+            ? `+${coinsEarned} coins claimed for your ${slotCapName} check-in! 🪙`
+            : awardMsg || `${slotCapName} reward was already claimed.`,
         },
       });
     }
@@ -220,13 +128,14 @@ export async function POST(req: Request) {
 
       const bonusRef = `checkin:${today}:all_slots_bonus`;
 
-      const { awarded: bonusAwarded, newBalance } = await awardCoinsHelper(
+      const { awarded: bonusAwarded, coinsEarned: bonusCoins, newBalance, message: bonusMsg, capReached: bonusCap } = await awardCoinsWithDailyCap(
         supabase,
         userId,
         BONUS_COIN_AMOUNT,
         'checkin_all_bonus',
         bonusRef,
-        'Daily bonus: All 3 check-ins completed and claimed!'
+        'Daily bonus: All 3 check-ins completed and claimed!',
+        true
       );
 
       if (bonusAwarded && checkinRow?.id) {
@@ -241,12 +150,15 @@ export async function POST(req: Request) {
         success: true,
         data: {
           bonusAwarded,
-          alreadyClaimed: !bonusAwarded,
-          coinsEarned: bonusAwarded ? BONUS_COIN_AMOUNT : 0,
+          alreadyClaimed: !bonusAwarded && !bonusCap,
+          capReached: bonusCap,
+          coinsEarned: bonusCoins,
           newBalance,
-          message: bonusAwarded
-            ? `+${BONUS_COIN_AMOUNT} bonus coins for completing all daily check-ins! 🌟`
-            : 'Daily bonus was already claimed.',
+          message: bonusCap
+            ? `Daily limit of ${REWARD_CONFIG.DAILY_COIN_LIMIT} coins reached today.`
+            : bonusAwarded
+            ? `+${bonusCoins} bonus coins for completing all daily check-ins! 🌟`
+            : bonusMsg || 'Daily bonus was already claimed.',
         },
       });
     }

@@ -38,6 +38,7 @@ export default function DashboardPage() {
     wellnessMode,
     userName,
     aiName,
+    coinBalance,
     isLoading,
     refreshAll,
     toggleTask,
@@ -333,6 +334,39 @@ export default function DashboardPage() {
           )}
         </Link>
       </motion.header>
+
+      {/* 🪙 Svanexa Coins & Rewards Banner */}
+      <motion.div
+        initial={{ opacity: 0, y: 6 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.2 }}
+        className="w-full p-4 sm:p-5 rounded-3xl bg-gradient-to-r from-amber-500/10 via-card/80 to-background border border-amber-500/25 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-sm backdrop-blur-md"
+      >
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-2xl bg-amber-500/15 border border-amber-500/30 flex items-center justify-center text-xl shrink-0">
+            🪙
+          </div>
+          <div>
+            <div className="flex items-baseline gap-2">
+              <span className="text-lg sm:text-xl font-black tracking-tight text-foreground font-mono">
+                {new Intl.NumberFormat('en-IN').format(coinBalance || 0)}
+              </span>
+              <span className="text-xs font-bold text-amber-400">Svanexa Coins</span>
+            </div>
+            <p className="text-[11px] text-muted-foreground">
+              10,000 Coins = ₹100 • Invite friends & earn 500 Coins
+            </p>
+          </div>
+        </div>
+
+        <Link
+          href="/rewards"
+          className="inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-full bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/30 text-amber-300 font-bold text-xs transition-all active:scale-95 self-start sm:self-center shrink-0 cursor-pointer"
+        >
+          <span>Rewards</span>
+          <ArrowRight className="w-3.5 h-3.5" />
+        </Link>
+      </motion.div>
 
       {/* 🧭 EFFORTLESS TAB NAVIGATION (PROGRESSIVE DISCLOSURE) */}
       <div className="flex items-center gap-1.5 p-1 rounded-2xl bg-secondary/30 border border-border/30 backdrop-blur-md self-start max-w-full overflow-x-auto scrollbar-thin">

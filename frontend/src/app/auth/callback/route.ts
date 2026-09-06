@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/utils/supabase/server';
+import { completeReferralIfEligible, recordReferralSignup } from '@/lib/rewards/rewards-service';
 
 export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url);
@@ -51,6 +52,17 @@ export async function GET(request: Request) {
             { onConflict: 'user_id' }
           )
         ]);
+      }
+
+      // Complete referral if user signed up via a referral link
+      try {
+        const metaRefCode = authData.user.user_metadata?.referral_code;
+        if (metaRefCode) {
+          await recordReferralSignup(supabase, metaRefCode, authData.user.id, authData.user.email || '');
+        }
+        await completeReferralIfEligible(supabase, authData.user.id);
+      } catch (refErr) {
+        console.warn('[auth/callback referral sync notice]', refErr);
       }
       
       const forwardedHost = request.headers.get('x-forwarded-host');

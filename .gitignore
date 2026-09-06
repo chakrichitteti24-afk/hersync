@@ -44,3 +44,4 @@ yarn-error.log*
 
 # antigravity artifacts
 /artifacts/
+.agents/

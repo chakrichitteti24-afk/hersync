@@ -43,3 +43,16 @@ export async function getAuthenticatedUser(req?: Request) {
   return { supabase, user, error };
 }
 
+/**
+ * Creates an admin client using SUPABASE_SERVICE_ROLE_KEY that bypasses RLS
+ * for server-side verification and background tasks.
+ */
+export function createAdminClient() {
+  const { createClient: createSupabaseClient } = require('@supabase/supabase-js');
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder.supabase.co';
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'placeholder-key';
+  return createSupabaseClient(url, key, {
+    auth: { autoRefreshToken: false, persistSession: false },
+  });
+}
+

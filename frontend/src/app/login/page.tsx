@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { createClient } from '@/utils/supabase/client';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { Eye, EyeOff, Loader2, Heart, Mail, Lock } from 'lucide-react';
+import { Eye, EyeOff, Loader2, Heart, Mail, Lock, CheckCircle2 } from 'lucide-react';
 import { Card, CardContent, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -14,12 +14,25 @@ import { motion } from 'framer-motion';
 export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [info, setInfo] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [isCheckingSession, setIsCheckingSession] = useState(true);
   const [showPassword, setShowPassword] = useState(false);
   const router = useRouter();
   const supabase = createClient();
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const params = new URLSearchParams(window.location.search);
+        const msg = params.get('message');
+        if (msg) setInfo(msg);
+        const err = params.get('error');
+        if (err) setError(err);
+      } catch {}
+    }
+  }, []);
 
   useEffect(() => {
     let isMounted = true;
@@ -46,6 +59,7 @@ export default function LoginPage() {
     e.preventDefault();
     setLoading(true);
     setError('');
+    setInfo('');
 
     const { error } = await supabase.auth.signInWithPassword({
       email,
@@ -54,12 +68,14 @@ export default function LoginPage() {
 
     if (error) {
       if (error.message.toLowerCase().includes('email not confirmed')) {
-        setError('Please verify your email before signing in. (If you just signed up, make sure email confirmation is disabled in your Supabase dashboard).');
+        setError('Please verify your email before signing in. Check your inbox for the confirmation link.');
       } else {
         setError(error.message);
       }
       setLoading(false);
     } else {
+      // Background check to complete pending referral if any
+      fetch('/api/referrals/complete', { method: 'POST' }).catch(() => {});
       window.location.href = '/dashboard';
     }
   };
@@ -146,6 +162,13 @@ export default function LoginPage() {
                   </button>
                 </div>
               </div>
+
+              {info && (
+                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="p-3 text-xs sm:text-sm text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 rounded-xl break-words flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-500" />
+                  <span>{info}</span>
+                </motion.div>
+              )}
 
               {error && (
                 <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="p-3 text-xs sm:text-sm text-red-500 bg-red-500/10 border border-red-500/20 rounded-xl break-words">

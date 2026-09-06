@@ -1,5 +1,6 @@
 import Groq from 'groq-sdk';
 import { GoogleGenerativeAI } from '@google/generative-ai';
+import { isCodingRequest, getPoliteNoCodeRefusal, applyCodeGuardrail, normalizeLanguageKey } from './wellness-guardrail';
 
 interface ChatMessage {
   role: 'user' | 'assistant' | 'system';
@@ -58,57 +59,51 @@ export class AIService {
     return {};
   }
 
-  async generateCompanionResponse(
-    message: string,
-    history: ChatMessage[],
-    healthSummary: string | object,
+  /**
+   * Constructs the empathetic, respectful, and strictly bounded system prompt.
+   */
+  public buildSystemPrompt(
     companionName: string = 'Luna',
     userName: string = 'there',
-    forceGemini: boolean = false,
-    language: string = 'English'
-  ): Promise<{ response: string; modelUsed: string; error?: string }> {
-    const parsedContext = this.parseContext(healthSummary);
+    userMode: string = 'general',
+    currentSlot: string = 'today',
+    currentPage: string = 'App',
+    targetLanguage: string = 'English',
+    parsedContext: Record<string, any> = {}
+  ): string {
+    const normalizedLang = normalizeLanguageKey(targetLanguage);
+    return `You are ${companionName}, the empathetic, emotionally attuned, and scientifically grounded AI Wellness Companion in the Svanexa ecosystem.
+You are in a private, safe, and judgment-free conversation with ${userName}.
 
-    const userObj = parsedContext.user || {};
-    const effectiveUserName = userObj.name || userName || 'there';
-    const effectiveCompanionName = userObj.companionName || companionName || 'Luna';
-    const userMode = userObj.mode || parsedContext.userMode || 'general';
-    const currentSlot = parsedContext.currentSlot || 'today';
-    const currentPage = userObj.currentPage || parsedContext.currentPage || 'App';
-    const targetLanguage = userObj.language || language || 'English';
+====================================================
+UTMOST POLITENESS, COURTESY & RESPECTFUL ADDRESS
+====================================================
+- **Courteous Address**: Always address ${userName} with supreme politeness, genuine warmth, and unconditional respect in every single interaction across all supported languages.
+- **Polite Phrasing**: Consistently employ courteous, gracious phrasing (e.g., "Please", "I would be delighted to", "With pleasure", "Kindly", "Warmly", and their culturally respectful native honorifics like "नमस्ते जी / आप", "దయచేసి / నమస్కారం", "por favor", etc.).
+- **Empathetic & Non-Judgmental Demeanor**: Even when user queries are brief, blunt, demanding, frustrated, or out-of-scope, always respond with unwavering patience, gentleness, empathy, and grace. Never respond with curtness, irritation, or cold robotic dismissal.
+- **Polite Out-of-Scope Redirection**: For any inquiries outside personal health and wellness, decline with the utmost courtesy, gentle respect, and warm appreciation, then smoothly and lovingly invite them back to their health, cycle, habits, and self-care.
 
-    const msgLower = message.toLowerCase().trim();
-    const isGreetingTrigger = message.includes('[GENERATE_GREETING]');
-
-    // Inline language enforcement — prepended to every user message for models that
-    // may ignore system-prompt language instructions (e.g. Groq OSS models)
-    const languageEnforcementPrefix = targetLanguage && targetLanguage !== 'English'
-      ? `[IMPORTANT: You MUST respond ONLY in ${targetLanguage}. Do NOT use English. Every word of your reply must be in ${targetLanguage}.] `
-      : '';
-
-    let maxTokens = 500;
-    if (isGreetingTrigger) {
-      maxTokens = 150;
-    } else if (msgLower.includes('report') || msgLower.includes('analyze') || msgLower.includes('summary')) {
-      maxTokens = 750;
-    }
-
-    const systemPrompt = `You are ${effectiveCompanionName}, the empathetic, emotionally attuned, and scientifically grounded AI Wellness Companion in the Svanexa ecosystem.
-You are in a private, safe, and judgment-free conversation with ${effectiveUserName}.
+====================================================
+STRICT HEALTH & WELLNESS BOUNDARY (ABSOLUTE NO-CODE POLICY)
+====================================================
+- **Exclusive Wellness Purpose**: You strictly and exclusively serve as a personal women's health, cycle tracking, PCOS, pregnancy care, nutrition, mindfulness, and lifestyle wellness companion.
+- **Absolute No-Code Rule**: You must NEVER write, generate, explain, debug, format, or output software code, technical programming scripts, algorithms, or coding tutorials under any circumstances. This includes, but is not limited to: Python, JavaScript, TypeScript, HTML, CSS, C++, Java, SQL, bash scripts, or any programming language.
+- **Courteous Code Refusal**: When asked to write code, create software, or perform programming tasks, you must politely decline with heartfelt courtesy and warmth, explain your dedicated purpose as a health and wellness companion, and warmly invite the user to discuss their well-being, symptoms, or daily wellness goals.
+- **Zero Code Snippets or Blocks**: Under NO circumstances should markdown code fences (\`\`\`), programming syntax, or technical scripts appear in your output.
 
 ====================================================
 LANGUAGE & MULTILINGUAL COMMUNICATION
 ====================================================
-Target Preferred Language: ${targetLanguage}
+Target Preferred Language: ${normalizedLang}
 
 Rules for Multilingual Interaction:
-1. **Primary Output Language**: Always reply fluently, naturally, and warmly in ${targetLanguage}.
+1. **Primary Output Language**: Always reply fluently, naturally, and warmly in ${normalizedLang}.
 2. **Native Script & Conversational Flow**:
-   - If ${targetLanguage} is Hindi, write primarily in natural Hindi (हिंदी - Devanagari script) or conversational Hinglish if the user asks in Hinglish.
-   - If ${targetLanguage} is Telugu, write in natural Telugu (తెలుగు script) or conversational Telugish if the user uses Latin script.
-   - If ${targetLanguage} is Tamil, write in natural Tamil (தமிழ் script) or conversational Tanglish.
-   - If ${targetLanguage} is Spanish, French, German, Portuguese, Arabic, Bengali, Marathi, Kannada, Malayalam, or Gujarati, write with native grammar and authentic warmth.
-3. **Adaptive Language Switching**: If ${effectiveUserName} asks a question in a specific language (or switches languages mid-conversation), seamlessly respond in the language they used while preserving the comforting, supportive tone.
+   - If ${normalizedLang} is Hindi, write primarily in natural Hindi (हिंदी - Devanagari script) or conversational Hinglish if the user asks in Hinglish.
+   - If ${normalizedLang} is Telugu, write in natural Telugu (తెలుగు script) or conversational Telugish if the user uses Latin script.
+   - If ${normalizedLang} is Tamil, write in natural Tamil (தமிழ் script) or conversational Tanglish.
+   - If ${normalizedLang} is Spanish, French, German, Portuguese, Arabic, Bengali, Marathi, Kannada, Malayalam, or Gujarati, write with native grammar and authentic warmth.
+3. **Adaptive Language Switching**: If ${userName} asks a question in a specific language (or switches languages mid-conversation), seamlessly respond in the language they used while preserving the comforting, supportive tone.
 4. **Culturally Sensitive & Warm Wellness Terminology**: Use respectful, culturally attuned expressions of care and warmth without sounding robotic or machine-translated.
 
 ====================================================
@@ -131,7 +126,7 @@ MOBILE-FIRST RESPONSE FORMATTING (STRICT)
 ====================================================
 REAL-TIME ACTIVITY & OMNI-LOG ACCESS
 ====================================================
-You have complete, live visibility into ${effectiveUserName}'s full activity across the app:
+You have complete, live visibility into ${userName}'s full activity across the app:
 - **Today's Check-ins (10-Dimension MCQ Logs)**: Morning, afternoon, and evening slot completions, energy levels, stress indicators, focus, physical comfort, mood, nutrition notes, and reflections.
 - **Hydration Tracking**: Today's logged ml vs 2000ml target, 7-day daily average, and weekly consistency.
 - **Sleep Architecture**: Last night's sleep duration & quality rating, 7-day average hours, and sleep consistency.
@@ -153,7 +148,7 @@ You have complete, live visibility into ${effectiveUserName}'s full activity acr
 - **Current App View Context**:
   - Current screen (${currentPage}) so your suggestions are instantly relevant to what the user is looking at.
 
-When ${effectiveUserName} asks about their day, health, habits, or logs, directly and naturally cite these real numbers.
+When ${userName} asks about their day, health, habits, or logs, directly and naturally cite these real numbers.
 NEVER fabricate or hallucinate unlogged data. If data is not yet logged, mention it warmly and invite them to log it.
 
 ====================================================
@@ -180,16 +175,72 @@ LIVE USER CONTEXT & REAL-TIME SNAPSHOT
 ====================================================
 Current Screen/View: ${currentPage}
 Current Time Slot: ${currentSlot}
-Preferred Language: ${targetLanguage}
+Preferred Language: ${normalizedLang}
 Live Activity Data:
 ${JSON.stringify(parsedContext, null, 2)}
 ====================================================`;
+  }
+
+  async generateCompanionResponse(
+    message: string,
+    history: ChatMessage[],
+    healthSummary: string | object,
+    companionName: string = 'Luna',
+    userName: string = 'there',
+    forceGemini: boolean = false,
+    language: string = 'English'
+  ): Promise<{ response: string; modelUsed: string; error?: string }> {
+    const parsedContext = this.parseContext(healthSummary);
+
+    const userObj = parsedContext.user || {};
+    const effectiveUserName = userObj.name || userName || 'there';
+    const effectiveCompanionName = userObj.companionName || companionName || 'Luna';
+    const userMode = userObj.mode || parsedContext.userMode || 'general';
+    const currentSlot = parsedContext.currentSlot || 'today';
+    const currentPage = userObj.currentPage || parsedContext.currentPage || 'App';
+    const targetLanguage = normalizeLanguageKey(userObj.language || language || 'English');
+
+    // Pre-execution guardrail: immediately and courteously refuse software coding / scripting requests
+    if (isCodingRequest(message)) {
+      const refusal = getPoliteNoCodeRefusal(targetLanguage, effectiveCompanionName, effectiveUserName);
+      return {
+        response: refusal,
+        modelUsed: 'guardrail-wellness-boundary',
+      };
+    }
+
+    const msgLower = message.toLowerCase().trim();
+    const isGreetingTrigger = message.includes('[GENERATE_GREETING]');
+
+    // Inline language enforcement — prepended to every user message for models that
+    // may ignore system-prompt language instructions (e.g. Groq OSS models)
+    const languageEnforcementPrefix = targetLanguage && targetLanguage !== 'English'
+      ? `[IMPORTANT: You MUST respond ONLY in ${targetLanguage}. Do NOT use English. Every word of your reply must be in ${targetLanguage}.] `
+      : '';
+
+    let maxTokens = 500;
+    if (isGreetingTrigger) {
+      maxTokens = 150;
+    } else if (msgLower.includes('report') || msgLower.includes('analyze') || msgLower.includes('summary')) {
+      maxTokens = 750;
+    }
+
+    const systemPrompt = this.buildSystemPrompt(
+      effectiveCompanionName,
+      effectiveUserName,
+      userMode,
+      currentSlot,
+      currentPage,
+      targetLanguage,
+      parsedContext
+    );
 
     // 1. If forceGemini is requested
     if (forceGemini) {
       try {
-        const responseText = await this.queryGemini(systemPrompt, history, message, maxTokens, languageEnforcementPrefix);
-        return { response: responseText, modelUsed: 'gemini-2.5-flash' };
+        const geminiResult = await this.queryGemini(systemPrompt, history, message, maxTokens, languageEnforcementPrefix);
+        const guardrail = applyCodeGuardrail(geminiResult.text, targetLanguage, effectiveCompanionName, effectiveUserName);
+        return { response: guardrail.content, modelUsed: guardrail.intercepted ? 'guardrail-wellness-boundary' : geminiResult.modelName };
       } catch (err) {
         const errorMsg = err instanceof Error ? err.message : String(err);
         return {
@@ -236,9 +287,10 @@ ${JSON.stringify(parsedContext, null, 2)}
           const chatCompletion: any = await Promise.race([responsePromise, timeoutPromise]);
           const reply = chatCompletion?.choices?.[0]?.message?.content;
           if (reply && typeof reply === 'string' && reply.trim().length > 0) {
+            const guardrail = applyCodeGuardrail(reply.trim(), targetLanguage, effectiveCompanionName, effectiveUserName);
             return {
-              response: reply.trim(),
-              modelUsed: modelName,
+              response: guardrail.content,
+              modelUsed: guardrail.intercepted ? 'guardrail-wellness-boundary' : modelName,
             };
           }
         } catch (modelErr) {
@@ -250,10 +302,11 @@ ${JSON.stringify(parsedContext, null, 2)}
     // 3. Secondary Backup: Gemini
     if (this.gemini) {
       try {
-        const responseText = await this.queryGemini(systemPrompt, history, message, maxTokens, languageEnforcementPrefix);
+        const geminiResult = await this.queryGemini(systemPrompt, history, message, maxTokens, languageEnforcementPrefix);
+        const guardrail = applyCodeGuardrail(geminiResult.text, targetLanguage, effectiveCompanionName, effectiveUserName);
         return {
-          response: responseText,
-          modelUsed: 'gemini-2.5-flash',
+          response: guardrail.content,
+          modelUsed: guardrail.intercepted ? 'guardrail-wellness-boundary' : geminiResult.modelName,
         };
       } catch (geminiError) {
         console.error('[AIService] Gemini fallback failed:', geminiError);
@@ -277,7 +330,7 @@ ${JSON.stringify(parsedContext, null, 2)}
     message: string,
     maxTokens: number,
     languagePrefix: string = ''
-  ): Promise<string> {
+  ): Promise<{ text: string; modelName: string }> {
     if (!this.gemini) {
       throw new Error('Gemini API key is not configured.');
     }
@@ -312,7 +365,7 @@ ${JSON.stringify(parsedContext, null, 2)}
         const response = await result.response;
         const text = response.text();
         if (text && text.trim().length > 0) {
-          return text.trim();
+          return { text: text.trim(), modelName };
         }
       } catch (err) {
         console.warn(`[AIService] Gemini model ${modelName} failed, trying next:`, err);

@@ -12,6 +12,7 @@ import {
   Award,
   User,
   ShoppingBag,
+  Gift,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { CoinBalanceBadge } from '@/components/ui/CoinBalanceBadge';
@@ -24,6 +25,7 @@ const navItems = [
   { name: 'Cycle & Period Care', href: '/cycle', icon: CalendarHeart },
   { name: 'Skin Care & Glow', href: '/skin', icon: Droplets },
   { name: 'Wellness Care Plan', href: '/wellness-plan', icon: Award },
+  { name: 'Rewards & Referrals', href: '/rewards', icon: Gift },
   { name: 'Svanexa Store', href: '/store', icon: ShoppingBag },
   { name: 'Reports', href: '/reports', icon: LineChart },
   { name: 'Profile', href: '/profile', icon: User },

@@ -10,8 +10,8 @@ export function CoinBalanceBadge({ className }: { className?: string }) {
   return (
     <div className={`relative inline-flex items-center ${className || ''}`}>
       <Link
-        href="/store"
-        aria-label="Svanexa Store - Coin Balance"
+        href="/rewards"
+        aria-label="Svanexa Rewards - Coin Balance"
         className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/25 text-amber-300 font-semibold text-xs transition-all duration-200 shadow-sm shadow-amber-500/10 group cursor-pointer"
       >
         <span className="text-sm transition-transform duration-200 group-hover:scale-110">🪙</span>

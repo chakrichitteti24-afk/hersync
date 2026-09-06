@@ -90,12 +90,37 @@ export default function SignUpPage() {
   const [wellnessMode, setWellnessMode] = useState<'general' | 'pcos' | 'pregnancy'>('general');
   const [reminderInterval, setReminderInterval] = useState<number>(5); // 5 min default
   const [enableNotifications, setEnableNotifications] = useState(true);
+  const [referralCode, setReferralCode] = useState<string>('');
+  const [referrerName, setReferrerName] = useState<string | null>(null);
 
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [isEmailSent, setIsEmailSent] = useState(false);
   const [isCheckingSession, setIsCheckingSession] = useState(true);
   const router = useRouter();
   const supabase = createClient();
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    try {
+      const params = new URLSearchParams(window.location.search);
+      const raw = params.get('ref') || params.get('code') || sessionStorage.getItem('svanexa_ref_code');
+      if (raw && typeof raw === 'string') {
+        const match = raw.match(/SVX-[A-Z0-9]{6}/i);
+        const clean = match ? match[0].toUpperCase() : raw.trim().toUpperCase();
+        setReferralCode(clean);
+        sessionStorage.setItem('svanexa_ref_code', clean);
+        fetch(`/api/referrals/validate?code=${encodeURIComponent(clean)}`)
+          .then((res) => res.json())
+          .then((json) => {
+            if (json.success && json.data?.referrerName) {
+              setReferrerName(json.data.referrerName);
+            }
+          })
+          .catch(() => {});
+      }
+    } catch {}
+  }, []);
 
   useEffect(() => {
     let isMounted = true;
@@ -164,10 +189,12 @@ export default function SignUpPage() {
     }
 
     try {
+      const redirectUrl = typeof window !== 'undefined' ? `${window.location.origin}/auth/callback` : undefined;
       const { data: authData, error: signUpError } = await supabase.auth.signUp({
         email,
         password,
         options: {
+          emailRedirectTo: redirectUrl,
           data: {
             first_name: firstName,
             last_name: lastName,
@@ -175,6 +202,7 @@ export default function SignUpPage() {
             ai_name: aiName,
             wellness_mode: wellnessMode,
             reminder_interval: reminderInterval,
+            referral_code: referralCode ? referralCode.trim().toUpperCase() : undefined,
           },
         },
       });
@@ -189,6 +217,23 @@ export default function SignUpPage() {
       }
 
       if (!authData.user) throw new Error('Failed to create account');
+
+      // Record pending referral if a referral code was provided
+      if (referralCode && authData.user) {
+        try {
+          await fetch('/api/referrals/track', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              referralCode: referralCode.trim().toUpperCase(),
+              newUserId: authData.user.id,
+              newUserEmail: email,
+            }),
+          });
+        } catch (refErr) {
+          console.warn('[signup referral track notice]', refErr);
+        }
+      }
 
       // Initialize profiles and wellness streaks
       await Promise.all([
@@ -234,10 +279,14 @@ export default function SignUpPage() {
       } catch {}
 
       if (!authData.session) {
-        router.push(
-          '/login?message=Account created. If confirmation is required, check your email. Otherwise, log in.'
-        );
+        // Email confirmation is required by Supabase auth
+        setIsEmailSent(true);
+        setLoading(false);
       } else {
+        // Auto-confirmed by Supabase auth settings: trigger referral completion
+        try {
+          await fetch('/api/referrals/complete', { method: 'POST' });
+        } catch {}
         window.location.href = '/dashboard';
       }
     } catch (err: any) {
@@ -258,6 +307,42 @@ export default function SignUpPage() {
             <Heart className="w-6 h-6 fill-white" />
           </div>
           <Loader2 className="w-5 h-5 text-pink-500 animate-spin" />
+        </div>
+      </div>
+    );
+  }
+
+  if (isEmailSent) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-dvh bg-background py-8 px-4 sm:py-12 sm:px-6 w-full max-w-full overflow-x-hidden selection:bg-pink-500/20">
+        <div className="w-full max-w-md mx-auto space-y-5 animate-in fade-in duration-300">
+          <Card className="border-pink-500/20 shadow-2xl shadow-pink-500/10 bg-card/70 backdrop-blur-xl p-6 sm:p-8 text-center space-y-5">
+            <div className="mx-auto w-16 h-16 rounded-2xl bg-gradient-to-tr from-pink-500/20 to-violet-500/20 border border-pink-500/30 flex items-center justify-center text-pink-400 shadow-inner">
+              <Mail className="w-8 h-8 animate-pulse" />
+            </div>
+            <div className="space-y-2">
+              <h2 className="text-2xl font-bold text-foreground">Verify Your Email</h2>
+              <p className="text-sm text-muted-foreground leading-relaxed">
+                We sent a confirmation link to <strong className="text-foreground">{email}</strong>.
+              </p>
+              <p className="text-xs text-muted-foreground/80 leading-relaxed pt-1">
+                Please click the link in your email to activate your account and start earning Svanexa Coins.
+              </p>
+              {referralCode && (
+                <div className="mt-3 p-3 rounded-xl bg-pink-500/10 border border-pink-500/20 text-xs text-pink-300">
+                  🪙 Once your email is verified, your referrer ({referralCode}) will automatically receive their +500 Coins bonus!
+                </div>
+              )}
+            </div>
+            <div className="pt-2 space-y-2">
+              <Button
+                onClick={() => router.push('/login')}
+                className="w-full bg-gradient-to-r from-pink-500 to-violet-500 hover:from-pink-600 hover:to-violet-600 text-white font-semibold h-11 rounded-xl shadow-md shadow-pink-500/20"
+              >
+                Go to Sign In
+              </Button>
+            </div>
+          </Card>
         </div>
       </div>
     );
@@ -435,6 +520,51 @@ export default function SignUpPage() {
                       </button>
                     </div>
                   </div>
+
+                  {/* Referral Code Indicator / Input */}
+                  {referralCode ? (
+                    <div className="flex items-center justify-between p-3 rounded-xl bg-gradient-to-r from-pink-500/10 to-violet-500/10 border border-pink-500/25 text-xs text-pink-300">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <Sparkles className="w-4 h-4 text-pink-400 shrink-0" />
+                        <span className="truncate">
+                          Referred by <strong className="text-white font-semibold">{referrerName || 'a friend'}</strong> ({referralCode})
+                        </span>
+                      </div>
+                      <span className="text-[10px] uppercase font-extrabold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20 shrink-0 ml-2">
+                        Linked ✓
+                      </span>
+                    </div>
+                  ) : (
+                    <div className="space-y-1.5 pt-1">
+                      <Label htmlFor="referralCode" className="text-xs font-medium text-muted-foreground flex items-center justify-between">
+                        <span>Referral Code (Optional)</span>
+                        <span className="text-[10px] text-amber-400 font-bold">🪙 Friend earns 500 coins</span>
+                      </Label>
+                      <Input
+                        id="referralCode"
+                        value={referralCode}
+                        onChange={(e) => {
+                          const input = e.target.value.trim();
+                          const match = input.match(/SVX-[A-Z0-9]{6}/i);
+                          const val = match ? match[0].toUpperCase() : input.toUpperCase();
+                          setReferralCode(val);
+                          if (val.length >= 6) {
+                            fetch(`/api/referrals/validate?code=${encodeURIComponent(val)}`)
+                              .then((r) => r.json())
+                              .then((d) => {
+                                if (d.success && d.data?.referrerName) setReferrerName(d.data.referrerName);
+                                else setReferrerName(null);
+                              })
+                              .catch(() => {});
+                          } else {
+                            setReferrerName(null);
+                          }
+                        }}
+                        placeholder="e.g. SVX-A7K92P"
+                        className="text-xs uppercase tracking-wider font-mono"
+                      />
+                    </div>
+                  )}
 
                   {error && (
                     <motion.div
